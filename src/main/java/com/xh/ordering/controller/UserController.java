@@ -147,5 +147,35 @@ public class UserController {
         userService.deleteUser(userId);
         return Result.success("用户已删除", null);
     }
+    
+    /**
+     * 创建用户（管理员接口）
+     * POST /api/user
+     */
+    @PostMapping("")
+    public Result<User> createUser(@RequestParam String name,
+                                   @RequestParam String phone,
+                                   @RequestParam String password,
+                                   @RequestParam(required = false, defaultValue = "1") Integer status) {
+        User user = userService.createUser(name, phone, password, status);
+        user.setPassword(null); // 不返回密码
+        return Result.success("用户创建成功", user);
+    }
+    
+    /**
+     * 更新用户信息（管理员接口）
+     * PUT /api/user/{userId}
+     */
+    @PutMapping("/{userId}")
+    public Result<User> updateUser(@PathVariable Long userId,
+                                   @RequestParam(required = false) String name,
+                                   @RequestParam(required = false) String phone,
+                                   @RequestParam(required = false) String password,
+                                   @RequestParam(required = false) Integer status) {
+        userService.updateUser(userId, name, phone, password, status);
+        User user = userService.getUserById(userId);
+        user.setPassword(null); // 不返回密码
+        return Result.success("用户更新成功", user);
+    }
 }
 

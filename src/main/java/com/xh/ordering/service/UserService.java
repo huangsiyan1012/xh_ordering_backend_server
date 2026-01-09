@@ -166,5 +166,65 @@ public class UserService {
         }
         userMapper.deleteById(userId);
     }
+    
+    /**
+     * 创建用户（管理员接口）
+     */
+    public User createUser(String name, String phone, String password, Integer status) {
+        // 检查手机号是否已存在
+        User existUser = userMapper.selectOne(
+            new LambdaQueryWrapper<User>()
+                .eq(User::getPhone, phone)
+        );
+        if (existUser != null) {
+            throw new BusinessException(ResultCode.PHONE_ALREADY_EXISTS);
+        }
+        
+        User user = new User();
+        user.setName(name);
+        user.setPhone(phone);
+        user.setPassword(password); // 密码明文存储
+        user.setPoints(0);
+        user.setStatus(status != null ? status : 1);
+        user.setCreatedAt(LocalDateTime.now());
+        
+        userMapper.insert(user);
+        return user;
+    }
+    
+    /**
+     * 更新用户信息（管理员接口）
+     */
+    public void updateUser(Long userId, String name, String phone, String password, Integer status) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_FOUND);
+        }
+        
+        // 如果修改了手机号，检查新手机号是否已被其他用户使用
+        if (StringUtils.hasText(phone) && !phone.equals(user.getPhone())) {
+            User existUser = userMapper.selectOne(
+                new LambdaQueryWrapper<User>()
+                    .eq(User::getPhone, phone)
+                    .ne(User::getId, userId)
+            );
+            if (existUser != null) {
+                throw new BusinessException(ResultCode.PHONE_ALREADY_EXISTS);
+            }
+            user.setPhone(phone);
+        }
+        
+        if (StringUtils.hasText(name)) {
+            user.setName(name);
+        }
+        if (StringUtils.hasText(password)) {
+            user.setPassword(password); // 密码明文存储
+        }
+        if (status != null) {
+            user.setStatus(status);
+        }
+        
+        userMapper.updateById(user);
+    }
 }
 
