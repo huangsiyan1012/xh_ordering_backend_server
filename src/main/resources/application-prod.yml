@@ -1,0 +1,53 @@
+# 生产环境配置
+server:
+  port: 8080
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+
+spring:
+  datasource:
+    # 生产环境请修改数据库连接信息
+    url: jdbc:mysql://localhost:3306/xh_ordering?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=false
+    username: root
+    password: ${DB_PASSWORD:your_password}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+# MyBatis Plus配置（生产环境不显示SQL）
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nop.NoLoggingImpl
+
+# JWT配置（生产环境请修改密钥）
+jwt:
+  secret: ${JWT_SECRET:change-this-secret-key-in-production-environment}
+  expiration: 86400000
+
+# 日志配置（生产环境）
+logging:
+  level:
+    com.xh.ordering: info
+    org.springframework.web: warn
+    org.springframework.security: warn
+  file:
+    name: /var/log/xh-ordering/xh-ordering.log
+    max-size: 100MB
+    max-history: 30
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
+
+# Actuator配置（生产环境）
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xh.ordering.mapper.UserMapper">
+    
+    <!-- 扣减用户积分 -->
+    <update id="deductPoints">
+        UPDATE user 
+        SET points = points - #{points}
+        WHERE id = #{userId} AND points >= #{points}
+    </update>
+    
+    <!-- 增加用户积分 -->
+    <update id="addPoints">
+        UPDATE user 
+        SET points = points + #{points}
+        WHERE id = #{userId}
+    </update>
+    
+</mapper>
+
