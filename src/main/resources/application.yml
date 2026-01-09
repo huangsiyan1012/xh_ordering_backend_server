@@ -59,3 +59,9 @@ management:
     health:
       show-details: when-authorized
 
+# 文件上传配置
+file:
+  upload:
+    path: uploads  # 上传文件保存路径（相对于项目根目录）
+    url-prefix: /uploads  # 访问URL前缀
+
