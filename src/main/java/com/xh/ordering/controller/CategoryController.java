@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 分类控制器
@@ -64,6 +65,30 @@ public class CategoryController {
     public Result<?> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
         return Result.success("删除成功");
+    }
+    
+    /**
+     * 管理员：获取分类列表（支持分页和搜索）
+     * GET /api/category/admin/list-page
+     */
+    @GetMapping("/admin/list-page")
+    public Result<Map<String, Object>> getCategoryList(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String name) {
+        Map<String, Object> result = categoryService.getCategoryList(page, pageSize, name);
+        return Result.success(result);
+    }
+    
+    /**
+     * 管理员：更新分类状态
+     * PUT /api/category/admin/{id}/status
+     */
+    @PutMapping("/admin/{id}/status")
+    public Result<Void> updateCategoryStatus(@PathVariable Long id, 
+                                            @RequestParam Integer status) {
+        categoryService.updateCategoryStatus(id, status);
+        return Result.success(status == 1 ? "分类已上架" : "分类已下架", null);
     }
 }
 
