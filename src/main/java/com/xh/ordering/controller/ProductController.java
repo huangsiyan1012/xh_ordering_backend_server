@@ -81,7 +81,7 @@ public class ProductController {
      */
     @PutMapping("/admin/{id}/status")
     public Result<Void> updateProductStatus(@PathVariable Long id, 
-                                            @RequestParam Integer status) {
+                                        @RequestParam Integer status) {
         productService.updateProductStatus(id, status);
         return Result.success(status == 1 ? "菜品已上架" : "菜品已下架", null);
     }

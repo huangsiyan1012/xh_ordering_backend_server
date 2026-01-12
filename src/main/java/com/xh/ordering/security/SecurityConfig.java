@@ -51,6 +51,7 @@ public class SecurityConfig {
                     "/product/category/**",
                     "/product/**",
                     "/category/list",
+                    "/uploads/**",
                     "/actuator/health",
                     "/swagger-ui/**",
                     "/swagger-resources/**",

@@ -1,26 +1,36 @@
 package com.xh.ordering.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.xh.ordering.common.ResultCode;
 import com.xh.ordering.dto.OrderCreateDTO;
 import com.xh.ordering.entity.OrderItem;
 import com.xh.ordering.entity.Orders;
 import com.xh.ordering.entity.PointRecord;
 import com.xh.ordering.entity.Product;
+import com.xh.ordering.entity.User;
 import com.xh.ordering.exception.BusinessException;
 import com.xh.ordering.mapper.OrderItemMapper;
 import com.xh.ordering.mapper.OrdersMapper;
 import com.xh.ordering.mapper.PointRecordMapper;
 import com.xh.ordering.mapper.ProductMapper;
 import com.xh.ordering.mapper.UserMapper;
+import com.xh.ordering.vo.OrderVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * 订单服务
@@ -171,6 +181,16 @@ public class OrderService {
     }
     
     /**
+     * 更新订单备注
+     */
+    public void updateOrderRemark(Long orderId, String remark) {
+        Orders order = new Orders();
+        order.setId(orderId);
+        order.setRemark(remark);
+        ordersMapper.updateById(order);
+    }
+    
+    /**
      * 查询所有订单（管理员/后厨）
      */
     public List<Orders> getAllOrders() {
@@ -178,6 +198,104 @@ public class OrderService {
             new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Orders>()
                 .orderByDesc(Orders::getCreatedAt)
         );
+    }
+    
+    /**
+     * 获取订单列表（支持分页和搜索，包含用户昵称）
+     * 搜索条件：订单号、用户昵称、备注、菜品名称
+     */
+    public Map<String, Object> getOrderList(Integer page, Integer pageSize, 
+                                             String orderNo, String userName, 
+                                             String remark, String productName) {
+        Page<Orders> pageParam = new Page<>(page, pageSize);
+        LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
+        
+        // 如果搜索条件包含菜品名称，先查询订单明细获取符合条件的订单ID列表
+        Set<Long> orderIdsByProduct = null;
+        if (StringUtils.hasText(productName)) {
+            List<OrderItem> items = orderItemMapper.selectList(
+                new LambdaQueryWrapper<OrderItem>()
+                    .like(OrderItem::getProductName, productName)
+            );
+            orderIdsByProduct = items.stream()
+                .map(OrderItem::getOrderId)
+                .collect(Collectors.toSet());
+            
+            // 如果没有找到符合条件的订单，直接返回空结果
+            if (orderIdsByProduct.isEmpty()) {
+                Map<String, Object> result = new HashMap<>();
+                result.put("list", new ArrayList<>());
+                result.put("total", 0L);
+                result.put("page", page);
+                result.put("pageSize", pageSize);
+                return result;
+            }
+            queryWrapper.in(Orders::getId, orderIdsByProduct);
+        }
+        
+        // 搜索条件：订单号
+        if (StringUtils.hasText(orderNo)) {
+            queryWrapper.like(Orders::getOrderNo, orderNo);
+        }
+        
+        // 搜索条件：备注
+        if (StringUtils.hasText(remark)) {
+            queryWrapper.like(Orders::getRemark, remark);
+        }
+        
+        // 按创建时间降序
+        queryWrapper.orderByDesc(Orders::getCreatedAt);
+        
+        IPage<Orders> pageResult = ordersMapper.selectPage(pageParam, queryWrapper);
+        
+        // 获取所有用户信息，用于组装用户昵称
+        List<User> users = userMapper.selectList(null);
+        Map<Long, String> userMap = users.stream()
+            .collect(Collectors.toMap(User::getId, User::getName));
+        
+        // 如果搜索条件包含用户昵称，需要进一步过滤
+        List<Orders> filteredOrders = pageResult.getRecords();
+        if (StringUtils.hasText(userName)) {
+            filteredOrders = filteredOrders.stream()
+                .filter(order -> {
+                    String name = userMap.get(order.getUserId());
+                    return name != null && name.contains(userName);
+                })
+                .collect(Collectors.toList());
+        }
+        
+        // 转换为OrderVO，填充用户昵称
+        List<OrderVO> voList = filteredOrders.stream().map(order -> {
+            OrderVO vo = new OrderVO();
+            vo.setId(order.getId());
+            vo.setOrderNo(order.getOrderNo());
+            vo.setUserId(order.getUserId());
+            vo.setUserName(userMap.get(order.getUserId()));
+            vo.setTotalPoints(order.getTotalPoints());
+            vo.setRemark(order.getRemark());
+            vo.setCreatedAt(order.getCreatedAt());
+            return vo;
+        }).collect(Collectors.toList());
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", voList);
+        // 如果进行了用户昵称过滤，需要重新计算总数
+        if (StringUtils.hasText(userName)) {
+            // 重新查询总数（包含用户昵称过滤）
+            long total = ordersMapper.selectList(queryWrapper).stream()
+                .filter(order -> {
+                    String name = userMap.get(order.getUserId());
+                    return name != null && name.contains(userName);
+                })
+                .count();
+            result.put("total", total);
+        } else {
+            result.put("total", pageResult.getTotal());
+        }
+        result.put("page", pageResult.getCurrent());
+        result.put("pageSize", pageResult.getSize());
+        
+        return result;
     }
 }
 

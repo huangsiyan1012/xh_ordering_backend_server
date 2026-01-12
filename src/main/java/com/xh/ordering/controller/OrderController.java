@@ -78,5 +78,34 @@ public class OrderController {
     public Result<List<Orders>> getAllOrders() {
         return Result.success(orderService.getAllOrders());
     }
+    
+    /**
+     * 管理员：获取订单列表（支持分页和搜索）
+     * GET /api/order/admin/list-page
+     */
+    @GetMapping("/admin/list-page")
+    public Result<Map<String, Object>> getOrderList(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String orderNo,
+            @RequestParam(required = false) String userName,
+            @RequestParam(required = false) String remark,
+            @RequestParam(required = false) String productName) {
+        Map<String, Object> result = orderService.getOrderList(
+            page, pageSize, orderNo, userName, remark, productName);
+        return Result.success(result);
+    }
+    
+    /**
+     * 管理员：更新订单备注
+     * PUT /api/order/admin/{id}/remark
+     */
+    @PutMapping("/admin/{id}/remark")
+    public Result<Void> updateOrderRemark(
+            @PathVariable Long id,
+            @RequestParam String remark) {
+        orderService.updateOrderRemark(id, remark);
+        return Result.success("备注更新成功", null);
+    }
 }
 
