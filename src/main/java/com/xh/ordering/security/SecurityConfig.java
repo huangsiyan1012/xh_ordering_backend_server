@@ -64,7 +64,9 @@ public class SecurityConfig {
                     "/product/admin/**",
                     "/category/admin/**",
                     "/order/admin/**",
-                    "/point/admin/**"
+                    "/point/admin/**",
+                    "/activity/admin/**",
+                    "/recharge/admin/**"
                 ).hasAnyRole("ADMIN", "CHEF")
                 // 用户接口
                 .antMatchers(
