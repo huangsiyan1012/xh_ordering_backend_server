@@ -32,6 +32,11 @@ public class User {
      */
     private Integer status;
     
+    /**
+     * 用户头像
+     */
+    private String image;
+    
     private LocalDateTime createdAt;
 }
 

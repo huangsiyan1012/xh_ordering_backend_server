@@ -170,7 +170,7 @@ public class UserService {
     /**
      * 创建用户（管理员接口）
      */
-    public User createUser(String name, String phone, String password, Integer status) {
+    public User createUser(String name, String phone, String password, Integer status, String image) {
         // 检查手机号是否已存在
         User existUser = userMapper.selectOne(
             new LambdaQueryWrapper<User>()
@@ -186,6 +186,7 @@ public class UserService {
         user.setPassword(password); // 密码明文存储
         user.setPoints(0);
         user.setStatus(status != null ? status : 1);
+        user.setImage(image);
         user.setCreatedAt(LocalDateTime.now());
         
         userMapper.insert(user);
@@ -195,7 +196,7 @@ public class UserService {
     /**
      * 更新用户信息（管理员接口）
      */
-    public void updateUser(Long userId, String name, String phone, String password, Integer status) {
+    public void updateUser(Long userId, String name, String phone, String password, Integer status, String image) {
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
@@ -222,6 +223,9 @@ public class UserService {
         }
         if (status != null) {
             user.setStatus(status);
+        }
+        if (image != null) {
+            user.setImage(image);
         }
         
         userMapper.updateById(user);
