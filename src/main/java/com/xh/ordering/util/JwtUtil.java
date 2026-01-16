@@ -29,9 +29,18 @@ public class JwtUtil {
     
     /**
      * 生成SecretKey
+     * 注意：必须与 8080 服务使用相同的密钥生成逻辑，确保 Token 可以跨服务验证
      */
     private SecretKey getSecretKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
+        // HS256 需要 >= 256bit (32字节) key
+        // 如果密钥长度 < 32 字节，填充到 32 字节（与 8080 服务保持一致）
+        if (bytes.length < 32) {
+            byte[] padded = new byte[32];
+            System.arraycopy(bytes, 0, padded, 0, bytes.length);
+            return Keys.hmacShaKeyFor(padded);
+        }
+        return Keys.hmacShaKeyFor(bytes);
     }
     
     /**
@@ -70,17 +79,33 @@ public class JwtUtil {
     
     /**
      * 从Token中获取用户ID
+     * 兼容两种Token格式：
+     * 1. 8080服务生成的Token：subject是userId的字符串，没有claims
+     * 2. 8081服务生成的Token：claims中有userId字段
      */
     public Long getUserIdFromToken(String token) {
         Claims claims = getClaimsFromToken(token);
         if (claims != null) {
+            // 优先从claims中获取userId（8081格式）
             Object userId = claims.get("userId");
-            if (userId instanceof Integer) {
-                return ((Integer) userId).longValue();
-            } else if (userId instanceof Long) {
-                return (Long) userId;
-            } else if (userId instanceof Number) {
-                return ((Number) userId).longValue();
+            if (userId != null) {
+                if (userId instanceof Integer) {
+                    return ((Integer) userId).longValue();
+                } else if (userId instanceof Long) {
+                    return (Long) userId;
+                } else if (userId instanceof Number) {
+                    return ((Number) userId).longValue();
+                }
+            }
+            
+            // 如果claims中没有userId，尝试从subject中解析（8080格式）
+            String subject = claims.getSubject();
+            if (subject != null && !subject.isEmpty()) {
+                try {
+                    return Long.valueOf(subject);
+                } catch (NumberFormatException e) {
+                    // subject不是数字，可能是username，忽略
+                }
             }
         }
         return null;

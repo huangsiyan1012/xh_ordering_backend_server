@@ -73,7 +73,10 @@ public class SecurityConfig {
                     "/order/create",
                     "/order/user/**",
                     "/user/info/**",
-                    "/user/point-records/**"
+                    "/user/point-records/**",
+                    "/file/upload",
+                    "/activity/my-list",
+                    "/activity/submit"
                 ).hasAnyRole("USER", "ADMIN", "CHEF")
                 // 其他请求需要认证
                 .anyRequest().authenticated()

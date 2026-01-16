@@ -73,5 +73,33 @@ public class ActivityController {
         activityService.updateActivityStatus(id, status);
         return Result.success("状态更新成功", null);
     }
+    
+    /**
+     * 管理员：获取待审核的活动列表（分页）
+     * GET /api/activity/admin/review/list-page
+     */
+    @GetMapping("/admin/review/list-page")
+    public Result<Map<String, Object>> getPendingReviewList(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String activityTitle,
+            @RequestParam(required = false) String userName) {
+        Map<String, Object> result = activityService.getPendingReviewList(page, pageSize, activityTitle, userName);
+        return Result.success(result);
+    }
+    
+    /**
+     * 管理员：审核用户活动（通过或驳回）
+     * PUT /api/activity/admin/review/{userActivityId}
+     */
+    @PutMapping("/admin/review/{userActivityId}")
+    public Result<Void> reviewUserActivity(
+            @PathVariable Long userActivityId,
+            @RequestParam Boolean approved,
+            @RequestParam(required = false) String reviewRemark) {
+        activityService.reviewUserActivity(userActivityId, approved, reviewRemark);
+        String message = approved ? "审核通过" : "审核驳回";
+        return Result.success(message, null);
+    }
 }
 

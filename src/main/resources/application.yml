@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8081
   servlet:
     context-path: /api
 
@@ -62,6 +62,6 @@ management:
 # 文件上传配置
 file:
   upload:
-    path: uploads  # 上传文件保存路径（相对于项目根目录）
+    path: E:\xh_ordering\upload  # 上传文件保存路径（统一目录，前后台共享）
     url-prefix: /uploads  # 访问URL前缀
 
